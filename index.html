@@ -10,6 +10,7 @@
 let player;
 let enemies = [];
 let trees = [];
+let bullets = [];
 let cameraX = 0;
 
 function setup() {
@@ -19,7 +20,8 @@ function setup() {
     x: 100,
     y: 300,
     speed: 5,
-    size: 40
+    width: 20,
+    height: 40
   };
   // Cria árvores
   for (let i = 0; i < 10; i++) {
@@ -34,9 +36,10 @@ function setup() {
     enemies.push({
       x: random(200, 2000),
       y: random(250, 350),
-      size: 40,
-      speedX: random(-2, 2),
-      speedY: random(-1, 1)
+      width: 20,
+      height: 40,
+      speed: 2,
+      alive: true
     });
   }
 }
@@ -65,22 +68,48 @@ function draw() {
     ellipse(tree.x, tree.y - 30, tree.size, tree.size); // Folhas
   }
   
-  // Desenha o jogador
+  // Desenha o jogador (figura humanoide)
   fill(0, 0, 255);
-  ellipse(player.x, player.y, player.size);
+  drawHumanoid(player.x, player.y, player.width, player.height);
+  
+  // Atualiza e desenha balas
+  fill(255, 255, 0); // Amarelo para balas
+  for (let i = bullets.length - 1; i >= 0; i--) {
+    let bullet = bullets[i];
+    bullet.x += bullet.speed;
+    ellipse(bullet.x, bullet.y, 10, 5); // Bala como elipse pequena
+    
+    // Remove balas que saem da tela
+    if (bullet.x > cameraX + width || bullet.x < cameraX) {
+      bullets.splice(i, 1);
+      continue;
+    }
+    
+    // Verifica colisão com inimigos
+    for (let j = enemies.length - 1; j >= 0; j--) {
+      let enemy = enemies[j];
+      if (enemy.alive && dist(bullet.x, bullet.y, enemy.x, enemy.y) < (player.width + enemy.width) / 2) {
+        enemies.splice(j, 1); // Remove inimigo atingido
+        bullets.splice(i, 1); // Remove bala
+        break;
+      }
+    }
+  }
   
   // Desenha e atualiza inimigos
   fill(255, 0, 0);
   for (let enemy of enemies) {
-    // Movimento aleatório
-    enemy.x += enemy.speedX;
-    enemy.y += enemy.speedY;
-    
-    // Limita o movimento dos inimigos
-    if (enemy.x < 0 || enemy.x > 2000) enemy.speedX *= -1;
-    if (enemy.y < 250 || enemy.y > 350) enemy.speedY *= -1;
-    
-    ellipse(enemy.x, enemy.y, enemy.size);
+    if (enemy.alive) {
+      // Movimento em direção ao jogador
+      let dx = player.x - enemy.x;
+      let dy = player.y - enemy.y;
+      let distance = sqrt(dx * dx + dy * dy);
+      if (distance > 5) { // Evita tremulação quando muito próximo
+        enemy.x += (dx / distance) * enemy.speed;
+        enemy.y += (dy / distance) * enemy.speed;
+      }
+      drawHumanoid(enemy.x, enemy.y, enemy.width, enemy.height);
+    }
   }
   
   pop();
@@ -101,6 +130,31 @@ function draw() {
   if (keyIsDown(DOWN_ARROW)) {
     player.y += player.speed;
     if (player.y > 350) player.y = 350;
+  }
+}
+
+// Função para desenhar figura humanoide
+function drawHumanoid(x, y, w, h) {
+  // Corpo
+  rect(x - w / 2, y - h / 2, w, h);
+  // Cabeça
+  ellipse(x, y - h / 2 - 10, w, w);
+  // Braços
+  line(x - w / 2, y - h / 4, x - w - 10, y);
+  line(x + w / 2, y - h / 4, x + w + 10, y);
+  // Pernas
+  line(x - w / 4, y + h / 2, x - w / 4, y + h / 2 + 20);
+  line(x + w / 4, y + h / 2, x + w / 4, y + h / 2 + 20);
+}
+
+// Atirar com a tecla Espaço
+function keyPressed() {
+  if (keyCode === 32) { // Tecla Espaço
+    bullets.push({
+      x: player.x + player.width / 2,
+      y: player.y,
+      speed: 10
+    });
   }
 }
 </script>
