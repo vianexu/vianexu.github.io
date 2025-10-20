@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Jogo Beat'em Up</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+</head>
+<body>
+<script>
+let player;
+let enemies = [];
+let trees = [];
+let cameraX = 0;
+
+function setup() {
+  createCanvas(800, 400);
+  // Inicializa o jogador
+  player = {
+    x: 100,
+    y: 300,
+    speed: 5,
+    size: 40
+  };
+  // Cria árvores
+  for (let i = 0; i < 10; i++) {
+    trees.push({
+      x: random(0, 2000),
+      y: random(100, 350),
+      size: 60
+    });
+  }
+  // Cria inimigos
+  for (let i = 0; i < 5; i++) {
+    enemies.push({
+      x: random(200, 2000),
+      y: random(250, 350),
+      size: 40,
+      speedX: random(-2, 2),
+      speedY: random(-1, 1)
+    });
+  }
+}
+
+function draw() {
+  background(100, 150, 100); // Fundo verde (grama)
+  
+  // Atualiza a posição da câmera
+  cameraX = player.x - width / 2;
+  if (cameraX < 0) cameraX = 0;
+  
+  // Aplica a transformação da câmera
+  push();
+  translate(-cameraX, 0);
+  
+  // Desenha o chão
+  fill(150, 100, 50);
+  rect(0, 300, 2000, 100);
+  
+  // Desenha árvores
+  fill(139, 69, 19); // Marrom para tronco
+  stroke(0);
+  for (let tree of trees) {
+    rect(tree.x - 10, tree.y - 20, 20, 40); // Tronco
+    fill(34, 139, 34); // Verde para folhas
+    ellipse(tree.x, tree.y - 30, tree.size, tree.size); // Folhas
+  }
+  
+  // Desenha o jogador
+  fill(0, 0, 255);
+  ellipse(player.x, player.y, player.size);
+  
+  // Desenha e atualiza inimigos
+  fill(255, 0, 0);
+  for (let enemy of enemies) {
+    // Movimento aleatório
+    enemy.x += enemy.speedX;
+    enemy.y += enemy.speedY;
+    
+    // Limita o movimento dos inimigos
+    if (enemy.x < 0 || enemy.x > 2000) enemy.speedX *= -1;
+    if (enemy.y < 250 || enemy.y > 350) enemy.speedY *= -1;
+    
+    ellipse(enemy.x, enemy.y, enemy.size);
+  }
+  
+  pop();
+  
+  // Controles do jogador
+  if (keyIsDown(LEFT_ARROW)) {
+    player.x -= player.speed;
+    if (player.x < 0) player.x = 0;
+  }
+  if (keyIsDown(RIGHT_ARROW)) {
+    player.x += player.speed;
+    if (player.x > 2000) player.x = 2000;
+  }
+  if (keyIsDown(UP_ARROW)) {
+    player.y -= player.speed;
+    if (player.y < 250) player.y = 250;
+  }
+  if (keyIsDown(DOWN_ARROW)) {
+    player.y += player.speed;
+    if (player.y > 350) player.y = 350;
+  }
+}
+</script>
+</body>
+</html>
