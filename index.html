@@ -12,6 +12,7 @@ let enemies = [];
 let trees = [];
 let bullets = [];
 let cameraX = 0;
+let animationFrame = 0; // Para animar as pernas
 
 function setup() {
   createCanvas(800, 400);
@@ -21,7 +22,9 @@ function setup() {
     y: 300,
     speed: 5,
     width: 20,
-    height: 40
+    height: 40,
+    legAngle: 0,
+    moving: false
   };
   // Cria árvores
   for (let i = 0; i < 10; i++) {
@@ -39,7 +42,8 @@ function setup() {
       width: 20,
       height: 40,
       speed: 2,
-      alive: true
+      alive: true,
+      legAngle: 0
     });
   }
 }
@@ -50,6 +54,9 @@ function draw() {
   // Atualiza a posição da câmera
   cameraX = player.x - width / 2;
   if (cameraX < 0) cameraX = 0;
+  
+  // Incrementa o quadro de animação
+  animationFrame += 0.1;
   
   // Aplica a transformação da câmera
   push();
@@ -68,9 +75,9 @@ function draw() {
     ellipse(tree.x, tree.y - 30, tree.size, tree.size); // Folhas
   }
   
-  // Desenha o jogador (figura humanoide)
+  // Desenha o jogador
   fill(0, 0, 255);
-  drawHumanoid(player.x, player.y, player.width, player.height);
+  drawHumanoid(player, player.moving);
   
   // Atualiza e desenha balas
   fill(255, 255, 0); // Amarelo para balas
@@ -104,54 +111,90 @@ function draw() {
       let dx = player.x - enemy.x;
       let dy = player.y - enemy.y;
       let distance = sqrt(dx * dx + dy * dy);
-      if (distance > 5) { // Evita tremulação quando muito próximo
+      if (distance > 5) {
         enemy.x += (dx / distance) * enemy.speed;
         enemy.y += (dy / distance) * enemy.speed;
+        enemy.legAngle = sin(animationFrame) * 30; // Anima pernas
       }
-      drawHumanoid(enemy.x, enemy.y, enemy.width, enemy.height);
+      drawHumanoid(enemy, true); // Inimigos sempre "andando"
     }
   }
   
   pop();
   
   // Controles do jogador
+  player.moving = false;
   if (keyIsDown(LEFT_ARROW)) {
     player.x -= player.speed;
     if (player.x < 0) player.x = 0;
+    player.moving = true;
   }
   if (keyIsDown(RIGHT_ARROW)) {
     player.x += player.speed;
     if (player.x > 2000) player.x = 2000;
+    player.moving = true;
   }
   if (keyIsDown(UP_ARROW)) {
     player.y -= player.speed;
     if (player.y < 250) player.y = 250;
+    player.moving = true;
   }
   if (keyIsDown(DOWN_ARROW)) {
     player.y += player.speed;
     if (player.y > 350) player.y = 350;
+    player.moving = true;
+  }
+  
+  // Atualiza animação das pernas do jogador
+  if (player.moving) {
+    player.legAngle = sin(animationFrame) * 30; // Ângulo oscilante para pernas
+  } else {
+    player.legAngle = 0; // Pernas paradas
   }
 }
 
 // Função para desenhar figura humanoide
-function drawHumanoid(x, y, w, h) {
+function drawHumanoid(entity, isMoving) {
+  push();
+  translate(entity.x, entity.y);
+  
   // Corpo
-  rect(x - w / 2, y - h / 2, w, h);
+  rect(-entity.width / 2, -entity.height / 2, entity.width, entity.height);
+  
   // Cabeça
-  ellipse(x, y - h / 2 - 10, w, w);
-  // Braços
-  line(x - w / 2, y - h / 4, x - w - 10, y);
-  line(x + w / 2, y - h / 4, x + w + 10, y);
-  // Pernas
-  line(x - w / 4, y + h / 2, x - w / 4, y + h / 2 + 20);
-  line(x + w / 4, y + h / 2, x + w / 4, y + h / 2 + 20);
+  ellipse(0, -entity.height / 2 - 10, entity.width, entity.width);
+  
+  // Braços (estáticos)
+  line(-entity.width / 2, -entity.height / 4, -entity.width - 10, 0);
+  line(entity.width / 2, -entity.height / 4, entity.width + 10, 0);
+  
+  // Pistola na mão direita do jogador
+  if (entity === player) {
+    fill(100); // Cinza para pistola
+    rect(entity.width / 2 + 10, -5, 10, 5); // Pistola como retângulo
+  }
+  
+  // Pernas (animadas se em movimento)
+  push();
+  translate(-entity.width / 4, entity.height / 2);
+  rotate(radians(isMoving ? entity.legAngle : 0));
+  line(0, 0, 0, 20);
+  pop();
+  
+  push();
+  translate(entity.width / 4, entity.height / 2);
+  rotate(radians(isMoving ? -entity.legAngle : 0));
+  line(0, 0, 0, 20);
+  pop();
+  
+  pop();
 }
 
 // Atirar com a tecla Espaço
 function keyPressed() {
   if (keyCode === 32) { // Tecla Espaço
     bullets.push({
-      x: player.x + player.width / 2,
+      x: player.x + player.width / 2 + 15, // Começa na ponta da pistola
       y: player.y,
       speed: 10
     });
